@@ -13,6 +13,12 @@ class Dino {
     this.animationFrame = 0;
     this.animationSpeed = 0.15;
     this.groundY = 250;
+    this.fireBreathCount = 5;  // 火炎放射の残り回数
+    this.isBreathingFire = false;  // 火炎放射中かどうか
+    this.fireBreathWidth = 100;  // 火炎の範囲
+    this.fireBreathHeight = 30;  // 火炎の高さ
+    this.fireBreathX = 0;  // 火炎の現在のX位置
+    this.fireBreathSpeed = 10;  // 火炎の移動速度
   }
 
   jump() {
@@ -39,6 +45,11 @@ class Dino {
       if (this.animationFrame > 4) {
         this.animationFrame = 0;
       }
+    }
+
+    // 火炎の位置更新
+    if (this.isBreathingFire) {
+      this.fireBreathX += this.fireBreathSpeed;
     }
   }
 
@@ -179,7 +190,7 @@ class Dino {
     ctx.arc(this.x + 70, this.y - 15, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // 鼻孔
+    // 鼻��
     ctx.fillStyle = "#FF6BB3";
     ctx.beginPath();
     ctx.ellipse(this.x + 72, this.y - 22, 1.5, 1, -0.2, 0, Math.PI * 2);
@@ -191,6 +202,26 @@ class Dino {
       this.drawLeg(ctx, this.x + 35, this.y + 35, legOffset < 0 ? -legOffset : 0, 0.8);
     } else {
       this.drawLeg(ctx, this.x + 35, this.y + 35, 0, 0.8);
+    }
+
+    // 火炎放射のエフェクト
+    if (this.isBreathingFire) {
+      const gradient = ctx.createLinearGradient(
+        this.fireBreathX, this.y - 20,
+        this.fireBreathX + this.fireBreathWidth, this.y - 20
+      );
+      gradient.addColorStop(0, '#ff4500');
+      gradient.addColorStop(0.6, '#ffa500');
+      gradient.addColorStop(1, 'rgba(255, 165, 0, 0)');
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(this.fireBreathX, this.y - 25);
+      ctx.lineTo(this.fireBreathX + this.fireBreathWidth, this.y - 35);
+      ctx.lineTo(this.fireBreathX + this.fireBreathWidth, this.y - 5);
+      ctx.lineTo(this.fireBreathX, this.y - 15);
+      ctx.closePath();
+      ctx.fill();
     }
   }
 
@@ -215,6 +246,17 @@ class Dino {
       x, y
     );
     ctx.fill();
+  }
+
+  breathFire() {
+    if (this.fireBreathCount > 0) {
+      this.isBreathingFire = true;
+      this.fireBreathCount--;
+      this.fireBreathX = this.x + 75;  // 火炎の初期位置
+      setTimeout(() => {
+        this.isBreathingFire = false;
+      }, 1000);  // 1秒間火炎放射
+    }
   }
 }
 
@@ -252,7 +294,7 @@ class Cactus {
     
     ctx.fillStyle = "#2d5";
 
-    // メインの茎
+    // メ���ンの茎
     ctx.beginPath();
     ctx.roundRect(this.x + 8, this.y - this.height, 8, this.height, 4);
     ctx.fill();
@@ -417,7 +459,7 @@ function drawBackground(ctx) {
 
 function drawStartScreen() {
     // タイトル
-    ctx.fillStyle = "#FF6BB3";  // 恐竜と同じピンク色
+    ctx.fillStyle = "#FF6BB3";
     ctx.font = "bold 48px Arial";
     ctx.textAlign = "center";
     ctx.fillText("DINO RUNNER", canvas.width/2, 120);
@@ -425,18 +467,13 @@ function drawStartScreen() {
     // サブタイトル
     ctx.fillStyle = "#666";
     ctx.font = "24px Arial";
-    ctx.fillText("Press SPACE to Start", canvas.width/2, 170);
+    ctx.fillText("Press SPACE to Start", canvas.width/2, 160);
 
     // 操作説明
     ctx.font = "20px Arial";
-    ctx.fillText("SPACE: Jump (Double Jump available)", canvas.width/2, 220);
-    ctx.fillText("R: Reset Game", canvas.width/2, 250);
-
-    // デモ恐竜の表示
-    const demoDino = new Dino();
-    demoDino.x = canvas.width/2 - 100;
-    demoDino.y = 150;
-    demoDino.draw(ctx);
+    ctx.fillText("SPACE: Jump (Double Jump available)", canvas.width/2, 200);
+    ctx.fillText("F: Breathe Fire (5 times only)", canvas.width/2, 230);
+    ctx.fillText("R: Reset Game", canvas.width/2, 260);
 
     ctx.textAlign = "left";  // テキストアラインを元に戻す
 }
@@ -464,6 +501,13 @@ function gameLoop() {
                     gameState = 'gameOver';
                 }
 
+                // 火炎放射との当たり判定を更新
+                if (dino.isBreathingFire && 
+                    cactus.x > dino.fireBreathX && 
+                    cactus.x < dino.fireBreathX + dino.fireBreathWidth) {
+                    return false;  // サボテンを消滅
+                }
+
                 return cactus.x > -20;
             });
 
@@ -473,6 +517,11 @@ function gameLoop() {
             ctx.fillStyle = "#000";
             ctx.font = "20px Arial";
             ctx.fillText(`Score: ${Math.floor(score / 10)}`, 650, 50);
+
+            // 残りの火炎放射回数を表示
+            ctx.fillStyle = "#000";
+            ctx.font = "20px Arial";
+            ctx.fillText(`Fire Breath: ${dino.fireBreathCount}`, 650, 80);
             break;
 
         case 'gameOver':
@@ -505,6 +554,7 @@ function resetGame() {
     score = 0;
     cacti = [];
     dino = new Dino();
+    dino.fireBreathCount = 5;
 }
 
 function drawRestartButton() {
@@ -561,6 +611,8 @@ document.addEventListener("keydown", (event) => {
     } else if (event.code === "KeyR" || event.key === "r") {
         event.preventDefault();
         resetGame();
+    } else if (event.code === "KeyF" && gameState === 'playing') {
+        dino.breathFire();
     }
 });
 
