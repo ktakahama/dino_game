@@ -190,7 +190,7 @@ class Dino {
     ctx.arc(this.x + 70, this.y - 15, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // 鼻��
+    // 鼻
     ctx.fillStyle = "#FF6BB3";
     ctx.beginPath();
     ctx.ellipse(this.x + 72, this.y - 22, 1.5, 1, -0.2, 0, Math.PI * 2);
@@ -294,7 +294,7 @@ class Cactus {
     
     ctx.fillStyle = "#2d5";
 
-    // メ���ンの茎
+    // メンの茎
     ctx.beginPath();
     ctx.roundRect(this.x + 8, this.y - this.height, 8, this.height, 4);
     ctx.fill();
@@ -472,10 +472,10 @@ function drawStartScreen() {
     // 操作説明
     ctx.font = "20px Arial";
     ctx.fillText("SPACE: Jump (Double Jump available)", canvas.width/2, 200);
-    ctx.fillText("F: Breathe Fire (5 times only)", canvas.width/2, 230);
+    ctx.fillText("F or Left Click: Breathe Fire (5 times only)", canvas.width/2, 230);
     ctx.fillText("R: Reset Game", canvas.width/2, 260);
 
-    ctx.textAlign = "left";  // テキストアラインを元に戻す
+    ctx.textAlign = "left";
 }
 
 function gameLoop() {
@@ -590,6 +590,9 @@ canvas.addEventListener("click", (event) => {
             y >= buttonY && y <= buttonY + buttonHeight) {
             resetGame();
         }
+    } else if (gameState === 'playing') {
+        // プレイ中は左クリックで火炎放射
+        dino.breathFire();
     }
 });
 
